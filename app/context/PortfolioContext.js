@@ -14,9 +14,9 @@ const SAMPLE_PROJECTS = [
 ];
 
 const DEFAULT_PROFILE = {
-  name: "Your Name",
+  name: "Wongsathorn Phumthong (Field)",
   bio: "Front-end developer focused on clean interfaces and fast, accessible implementations.",
-  email: "hello@example.com",
+  email: "fieldly710@gmail.com",
   avatar: null,
 };
 
