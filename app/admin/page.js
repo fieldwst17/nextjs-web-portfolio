@@ -1,24 +1,28 @@
-'use client';
-import { useState } from 'react';
-import { usePortfolio } from '../context/PortfolioContext';
+"use client";
+import { notFound } from "next/navigation";
+import { useState } from "react";
+import { usePortfolio } from "../context/PortfolioContext";
 
-const EMPTY_FORM = { name: '', description: '', url: '' };
+const EMPTY_FORM = { name: "", description: "", url: "" };
 
 export default function AdminPage() {
+  if (process.env.NODE_ENV === "production") notFound();
+
   const { projects, addProject, updateProject, deleteProject } = usePortfolio();
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [toast, setToast] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showExport, setShowExport] = useState(false);
 
-  const showToast = (message, type = 'success') => {
+  const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
@@ -26,19 +30,23 @@ export default function AdminPage() {
     if (!form.name.trim()) return;
     if (editingId !== null) {
       updateProject(editingId, { ...form });
-      showToast('Project updated successfully');
+      showToast("Project updated successfully");
       setEditingId(null);
     } else {
       addProject({ ...form });
-      showToast('Project added!');
+      showToast("Project added!");
     }
     setForm(EMPTY_FORM);
   };
 
   const handleEdit = (project) => {
     setEditingId(project.id);
-    setForm({ name: project.name, description: project.description, url: project.url });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setForm({
+      name: project.name,
+      description: project.description,
+      url: project.url,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -47,10 +55,28 @@ export default function AdminPage() {
   };
 
   const handleDelete = () => {
-    if (editingId === deleteTarget) { setEditingId(null); setForm(EMPTY_FORM); }
+    if (editingId === deleteTarget) {
+      setEditingId(null);
+      setForm(EMPTY_FORM);
+    }
     deleteProject(deleteTarget);
     setDeleteTarget(null);
-    showToast('Project deleted', 'error');
+    showToast("Project deleted", "error");
+  };
+
+  const exportCode = projects
+    .map((p, i) => {
+      const comma = i < projects.length - 1 ? "," : "";
+      return `  {\n    id: ${i + 1},\n    name: ${JSON.stringify(p.name)},\n    description: ${JSON.stringify(p.description)},\n    url: ${JSON.stringify(p.url)},\n  }${comma}`;
+    })
+    .join("\n");
+
+  const handleCopyExport = () => {
+    const text = `const SAMPLE_PROJECTS = [\n${exportCode}\n];`;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("Copied! Paste ใน PortfolioContext.js แล้ว redeploy");
+      setShowExport(false);
+    });
   };
 
   return (
@@ -60,26 +86,67 @@ export default function AdminPage() {
         <div className={`toast toast-${toast.type}`}>{toast.message}</div>
       )}
 
+      {/* Export modal */}
+      {showExport && (
+        <div className="modal-overlay" onClick={() => setShowExport(false)}>
+          <div
+            className="modal export-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Export Projects to Code</h3>
+            <p>
+              Copy โค้ดนี้ วางแทน <code>SAMPLE_PROJECTS</code> ใน{" "}
+              <code>app/context/PortfolioContext.js</code> แล้ว push ขึ้น Vercel
+              — ข้อมูลจะฝังอยู่ใน repo ถาวร ไม่หายเมื่อ redeploy
+            </p>
+            <pre className="export-code">{`const SAMPLE_PROJECTS = [\n${exportCode}\n];`}</pre>
+            <div className="modal-actions">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setShowExport(false)}
+              >
+                Close
+              </button>
+              <button className="btn btn-primary" onClick={handleCopyExport}>
+                Copy to Clipboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete confirmation modal */}
       {deleteTarget !== null && (
         <div className="modal-overlay" onClick={() => setDeleteTarget(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Delete project?</h3>
-            <p>This will permanently remove the project. This action cannot be undone.</p>
+            <p>
+              This will permanently remove the project. This action cannot be
+              undone.
+            </p>
             <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button className="btn btn-danger" onClick={handleDelete}>Delete</button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={handleDelete}>
+                Delete
+              </button>
             </div>
           </div>
         </div>
       )}
 
       <div className="admin-header">
-        <h1 className="page-title">{editingId !== null ? 'Edit Project' : 'Add New Project'}</h1>
+        <h1 className="page-title">
+          {editingId !== null ? "Edit Project" : "Add New Project"}
+        </h1>
         <p className="page-sub">
           {editingId !== null
-            ? 'Update the details of your project below.'
-            : 'Fill in the details to add a new project to your portfolio.'}
+            ? "Update the details of your project below."
+            : "Fill in the details to add a new project to your portfolio."}
         </p>
       </div>
 
@@ -87,7 +154,9 @@ export default function AdminPage() {
       <div className="form-card">
         <form onSubmit={handleSubmit} className="project-form">
           <div className="form-group">
-            <label className="form-label" htmlFor="name">Project Name *</label>
+            <label className="form-label" htmlFor="name">
+              Project Name *
+            </label>
             <input
               id="name"
               name="name"
@@ -100,7 +169,9 @@ export default function AdminPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="description">Description</label>
+            <label className="form-label" htmlFor="description">
+              Description
+            </label>
             <textarea
               id="description"
               name="description"
@@ -113,7 +184,9 @@ export default function AdminPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="url">Project URL</label>
+            <label className="form-label" htmlFor="url">
+              Project URL
+            </label>
             <input
               id="url"
               name="url"
@@ -127,12 +200,16 @@ export default function AdminPage() {
 
           <div className="form-actions">
             {editingId !== null && (
-              <button type="button" className="btn btn-ghost" onClick={handleCancel}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={handleCancel}
+              >
                 Cancel
               </button>
             )}
             <button type="submit" className="btn btn-primary">
-              {editingId !== null ? 'Update Project' : '+ Add Project'}
+              {editingId !== null ? "Update Project" : "+ Add Project"}
             </button>
           </div>
         </form>
@@ -144,6 +221,14 @@ export default function AdminPage() {
           All Projects
           <span className="badge">{projects.length}</span>
         </h2>
+        {projects.length > 0 && (
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowExport(true)}
+          >
+            📤 Export to Code
+          </button>
+        )}
       </div>
 
       {projects.length === 0 ? (
@@ -156,7 +241,7 @@ export default function AdminPage() {
           {projects.map((project) => (
             <div
               key={project.id}
-              className={`admin-item${editingId === project.id ? ' editing' : ''}`}
+              className={`admin-item${editingId === project.id ? " editing" : ""}`}
             >
               <div className="admin-item-info">
                 <p className="admin-item-name">{project.name}</p>
@@ -180,7 +265,7 @@ export default function AdminPage() {
                   onClick={() => handleEdit(project)}
                   disabled={editingId === project.id}
                 >
-                  {editingId === project.id ? 'Editing…' : 'Edit'}
+                  {editingId === project.id ? "Editing…" : "Edit"}
                 </button>
                 <button
                   className="btn btn-danger btn-sm"

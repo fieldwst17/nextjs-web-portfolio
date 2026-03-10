@@ -45,9 +45,11 @@ export default function Home() {
         <section id="work" className="projects">
           <div className="section-header">
             <h2>Selected Work</h2>
-            <Link href="/admin" className="btn btn-ghost btn-sm">
-              Manage
-            </Link>
+            {process.env.NODE_ENV !== 'production' && (
+              <Link href="/admin" className="btn btn-ghost btn-sm">
+                Manage
+              </Link>
+            )}
           </div>
           {projects.length === 0 ? (
             <div className="empty-state">

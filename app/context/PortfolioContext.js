@@ -1,27 +1,22 @@
-'use client';
-import { createContext, useContext, useState, useEffect } from 'react';
+"use client";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const PortfolioContext = createContext(null);
 
 const SAMPLE_PROJECTS = [
   {
     id: 1,
-    name: 'Project One',
-    description: 'A showcase project demonstrating design and front-end engineering skills.',
-    url: 'https://example.com',
-  },
-  {
-    id: 2,
-    name: 'Project Two',
-    description: 'Another project highlighting simplicity, speed, and clean code.',
-    url: '',
+    name: "ระบบจัดการหอพัก",
+    description:
+      "เว็บนี้คือ ระบบจัดการหอพัก (Dormitory Management System) ที่พัฒนาด้วย Next.js โดยมีจุดประสงค์หลักเพื่อ แทนที่กระดาษ/เอกสารด้วยฐานข้อมูลดิจิทัล และช่วยให้ผู้ดูแลหอพักจัดการงานประจำวันได้ง่ายขึ้น อีกทั้งระบบนี้ยังช่วยให้เจ้าของหอพักเปลี่ยนจากการจดบันทึกด้วยกระดาษมาเป็นระบบดิจิทัลครบวงจร ตั้งแต่รับผู้เช่า ทำสัญญา จดมิเตอร์ ออกบิล ไปจนถึงติดตามการชำระเงิน",
+    url: "https://dormitory-nextjs-web.vercel.app/",
   },
 ];
 
 const DEFAULT_PROFILE = {
-  name: 'Your Name',
-  bio: 'Front-end developer focused on clean interfaces and fast, accessible implementations.',
-  email: 'hello@example.com',
+  name: "Your Name",
+  bio: "Front-end developer focused on clean interfaces and fast, accessible implementations.",
+  email: "hello@example.com",
   avatar: null,
 };
 
@@ -32,10 +27,11 @@ export function PortfolioProvider({ children }) {
 
   useEffect(() => {
     try {
-      const storedProjects = localStorage.getItem('pf_projects');
-      const storedProfile = localStorage.getItem('pf_profile');
+      const storedProjects = localStorage.getItem("pf_projects");
+      const storedProfile = localStorage.getItem("pf_profile");
       if (storedProjects) setProjects(JSON.parse(storedProjects));
-      if (storedProfile) setProfileState(prev => ({ ...prev, ...JSON.parse(storedProfile) }));
+      if (storedProfile)
+        setProfileState((prev) => ({ ...prev, ...JSON.parse(storedProfile) }));
     } catch {
       // localStorage unavailable (private browsing, etc.)
     }
@@ -44,7 +40,11 @@ export function PortfolioProvider({ children }) {
 
   const persistProjects = (data) => {
     setProjects(data);
-    try { localStorage.setItem('pf_projects', JSON.stringify(data)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem("pf_projects", JSON.stringify(data));
+    } catch {
+      /* ignore */
+    }
   };
 
   const addProject = (project) => {
@@ -52,29 +52,37 @@ export function PortfolioProvider({ children }) {
   };
 
   const updateProject = (id, updates) => {
-    persistProjects(projects.map(p => p.id === id ? { ...p, ...updates } : p));
+    persistProjects(
+      projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    );
   };
 
   const deleteProject = (id) => {
-    persistProjects(projects.filter(p => p.id !== id));
+    persistProjects(projects.filter((p) => p.id !== id));
   };
 
   const updateProfile = (data) => {
     const updated = { ...profile, ...data };
     setProfileState(updated);
-    try { localStorage.setItem('pf_profile', JSON.stringify(updated)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem("pf_profile", JSON.stringify(updated));
+    } catch {
+      /* ignore */
+    }
   };
 
   return (
-    <PortfolioContext.Provider value={{
-      projects,
-      addProject,
-      updateProject,
-      deleteProject,
-      profile,
-      updateProfile,
-      hydrated,
-    }}>
+    <PortfolioContext.Provider
+      value={{
+        projects,
+        addProject,
+        updateProject,
+        deleteProject,
+        profile,
+        updateProfile,
+        hydrated,
+      }}
+    >
       {children}
     </PortfolioContext.Provider>
   );
@@ -82,6 +90,7 @@ export function PortfolioProvider({ children }) {
 
 export const usePortfolio = () => {
   const context = useContext(PortfolioContext);
-  if (!context) throw new Error('usePortfolio must be used within PortfolioProvider');
+  if (!context)
+    throw new Error("usePortfolio must be used within PortfolioProvider");
   return context;
 };
